@@ -65,7 +65,7 @@ func (c *ClientImpl) Realtime() (<-chan RealtimeResponse, chan<- struct{}, error
 				var r RealtimeResponse
 				err := json.Unmarshal(msg, &r)
 				if err != nil {
-					glog.Errorf("Cannot parse to JSON: ", err, string(msg))
+					glog.Error("Cannot parse to JSON: ", err, string(msg))
 					return
 				}
 				recvParsed <- r
@@ -98,14 +98,14 @@ func connect(u url.URL) (<-chan []byte, chan<- struct{}, error) {
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				glog.Errorf("read error:", err)
+				glog.Error("read error:", err)
 				return
 			}
 			select {
 			case sendChan <- message:
-				glog.Infof("Sent ", string(message))
+				glog.Info("Sent ", string(message))
 			default:
-				glog.Infof("Nothing sent")
+				glog.Info("Nothing sent")
 			}
 		}
 	}()
