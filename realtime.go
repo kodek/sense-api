@@ -1,7 +1,6 @@
 package sense_api
 
 import (
-	"log"
 	"net/url"
 
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"encoding/json"
 
 	"github.com/golang/glog"
-	"github.com/gorilla/websocket"
 )
 
 type RealtimeResponse struct {
@@ -46,13 +44,15 @@ type RealtimeResponse struct {
 	} `json:"payload"`
 }
 
+const WSS_URL_FORMAT = "wss://clientrt.sense.com/monitors/%d/realtimefeed?access_token=%s"
+
 func (c *ClientImpl) Realtime() (<-chan RealtimeResponse, chan<- struct{}, error) {
-	u, err := url.Parse(fmt.Sprintf("wss://clientrt.sense.com/monitors/%d/realtimefeed?access_token=%s", c.monitorId, c.accessToken))
+	u, err := url.Parse(fmt.Sprintf(WSS_URL_FORMAT, c.monitorId, c.accessToken))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	recv, done, err := connect(*u)
+	recv, done, err := wssConnect(*u)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -74,41 +74,4 @@ func (c *ClientImpl) Realtime() (<-chan RealtimeResponse, chan<- struct{}, error
 		}
 	}()
 	return recvParsed, done, nil
-}
-
-func connect(u url.URL) (<-chan []byte, chan<- struct{}, error) {
-	//u := url.URL{Scheme: "ws", Host: *addr, Path: "/echo"}
-	log.Printf("connecting to %s", u.String())
-
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	done := make(chan struct{})
-	sendChan := make(chan []byte)
-
-	go func() {
-		defer c.Close()
-		<-done
-	}()
-
-	go func() {
-		defer close(done)
-		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				glog.Error("read error:", err)
-				return
-			}
-			select {
-			case sendChan <- message:
-				glog.Info("Sent ", string(message))
-			default:
-				glog.Info("Nothing sent")
-			}
-		}
-	}()
-
-	return sendChan, done, err
 }
