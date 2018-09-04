@@ -17,7 +17,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	recv, done, err := client.Realtime()
+	done := make(chan struct{})
+	recv, err := client.Realtime(done)
 	if err != nil {
 		panic(err)
 	}

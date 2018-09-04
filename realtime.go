@@ -46,15 +46,15 @@ type RealtimeResponse struct {
 
 const WSS_URL_FORMAT = "wss://clientrt.sense.com/monitors/%d/realtimefeed?access_token=%s"
 
-func (c *ClientImpl) Realtime() (<-chan RealtimeResponse, chan<- struct{}, error) {
+func (c *ClientImpl) Realtime(done <-chan struct{}) (<-chan RealtimeResponse, error) {
 	u, err := url.Parse(fmt.Sprintf(WSS_URL_FORMAT, c.monitorId, c.accessToken))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	recv, done, err := wssConnect(*u)
+	recv, err := wssConnect(done, *u)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	recvParsed := make(chan RealtimeResponse)
@@ -68,10 +68,14 @@ func (c *ClientImpl) Realtime() (<-chan RealtimeResponse, chan<- struct{}, error
 					glog.Error("Cannot parse to JSON: ", err, string(msg))
 					return
 				}
-				recvParsed <- r
+				// Send realtime_update messages. Ignore all other message types
+				switch r.Type {
+				case "realtime_update":
+					recvParsed <- r
+				}
 			}
 
 		}
 	}()
-	return recvParsed, done, nil
+	return recvParsed, nil
 }

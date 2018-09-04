@@ -16,7 +16,7 @@ import (
 )
 
 type Client interface {
-	Realtime() (<-chan RealtimeResponse, chan<- struct{}, error)
+	Realtime(done <-chan struct{}) (<-chan RealtimeResponse, error)
 }
 
 type ClientImpl struct {
