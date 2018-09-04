@@ -21,6 +21,7 @@ func wssConnect(done <-chan struct{}, u url.URL) (<-chan []byte, error) {
 	go func() {
 		for {
 			defer c.Close()
+			defer close(sendChan)
 			_, message, err := c.ReadMessage()
 			if err != nil {
 				glog.Error("Read error:", err)
