@@ -19,9 +19,9 @@ func wssConnect(done <-chan struct{}, u url.URL) (<-chan []byte, error) {
 
 	// When received, send new messages back to the user.
 	go func() {
+		defer c.Close()
+		defer close(sendChan)
 		for {
-			defer c.Close()
-			defer close(sendChan)
 			_, message, err := c.ReadMessage()
 			if err != nil {
 				glog.Error("Read error:", err)
