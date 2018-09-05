@@ -59,6 +59,7 @@ func (c *ClientImpl) Realtime(done <-chan struct{}) (<-chan RealtimeResponse, er
 
 	recvParsed := make(chan RealtimeResponse)
 	go func() {
+		defer close(recvParsed)
 		for {
 			select {
 			case msg := <-recv:
@@ -69,10 +70,11 @@ func (c *ClientImpl) Realtime(done <-chan struct{}) (<-chan RealtimeResponse, er
 					return
 				}
 				// Send realtime_update messages. Ignore all other message types
-				switch r.Type {
-				case "realtime_update":
+				if r.Type == "realtime_update" {
 					recvParsed <- r
 				}
+			case <-done:
+				return
 			}
 
 		}
