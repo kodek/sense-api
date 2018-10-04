@@ -72,6 +72,8 @@ func (c *ClientImpl) Realtime(done <-chan struct{}) (<-chan RealtimeResponse, er
 				// Send realtime_update messages. Ignore all other message types
 				if r.Type == "realtime_update" {
 					recvParsed <- r
+				} else {
+					glog.Info("Ignored message (not type 'realtime_update'): ", string(msg))
 				}
 			case <-done:
 				return
